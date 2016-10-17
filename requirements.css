@@ -1,0 +1,19 @@
+table {
+    border-collapse: collapse;
+}
+table.summary {
+    table-layout: fixed;
+}
+table.summary,
+table.summary th,
+table.summary td {
+    border: 1px solid;
+}
+table.summary th,
+table.summary td {
+    padding: 0.3em;
+    vertical-align: top;
+}
+col.summary-col-tag {
+    width: 10em;
+}
