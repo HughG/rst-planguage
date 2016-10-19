@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="rst-planguage:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/rst_planguage_jar</output-path>
+    <root id="archive" name="rst-planguage.jar">
+      <element id="module-output" name="rst-planguage" />
+    </root>
+  </artifact>
+</component>
