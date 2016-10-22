@@ -60,8 +60,14 @@ public class Main {
         xPath.setNamespaceContext(new DocumentNamespaceContext(doc));
         XPathExpression summaryNodeExpr = xPath.compile("id('summary')");
         Element summaryNode = (Element) summaryNodeExpr.evaluate(doc, XPathConstants.NODE);
-
+        // Get the field names for the summary table, then remove that input field list, so we're effectively replacing
+        // it with the table we're adding below.
         List<String> summaryFields = getSummaryFields(xPath, summaryNode);
+        XPathExpression summaryFieldListNameNodeExpr = xPath.compile(
+                ".//*[contains(concat(' ', normalize-space(@class), ' '), ' field-list ')]"
+        );
+        Node summaryFieldListNode = (Node) summaryFieldListNameNodeExpr.evaluate(summaryNode, XPathConstants.NODE);
+        summaryFieldListNode.getParentNode().removeChild(summaryFieldListNode);
 
         // Now collect the contents of the corresponding nodes in the document.
         XPathExpression frSectionNodeExpr = xPath.compile(
