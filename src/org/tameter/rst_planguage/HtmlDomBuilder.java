@@ -67,8 +67,20 @@ class HtmlDomBuilder {
         return element;
     }
 
+    static HtmlDomBuilder a() {
+        return new HtmlDomBuilder("a");
+    }
+
     static HtmlDomBuilder table() {
         return new HtmlDomBuilder("table");
+    }
+
+    static HtmlDomBuilder colgroup() {
+        return new HtmlDomBuilder("colgroup");
+    }
+
+    static HtmlDomBuilder col() {
+        return new HtmlDomBuilder("col");
     }
 
     static HtmlDomBuilder tr() {
