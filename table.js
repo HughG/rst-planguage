@@ -846,7 +846,7 @@ var Table = (function(){
 		for (var i=0,L=bodies.length; i<L; i++) {
 			var tbody = bodies[i];
 			for (var r=0,L2=tbody.rows.length; r<L2; r++) {
-				values[this.getCellValue(tbody.rows[r].cells[col])] = true;
+				values[this.getCellValue(tbody.rows[r].cells[col].trim())] = true;
 			}
 		}
 		var valArray = [];
