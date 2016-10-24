@@ -67,9 +67,19 @@ class HtmlDomBuilder {
         return element;
     }
 
+    // Script
+
+    static HtmlDomBuilder script() {
+        return new HtmlDomBuilder("script");
+    }
+
+    // Anchors
+
     static HtmlDomBuilder a() {
         return new HtmlDomBuilder("a");
     }
+
+    // Tables
 
     static HtmlDomBuilder table() {
         return new HtmlDomBuilder("table");
@@ -81,6 +91,14 @@ class HtmlDomBuilder {
 
     static HtmlDomBuilder col() {
         return new HtmlDomBuilder("col");
+    }
+
+    static HtmlDomBuilder thead() {
+        return new HtmlDomBuilder("thead");
+    }
+
+    static HtmlDomBuilder tbody() {
+        return new HtmlDomBuilder("tbody");
     }
 
     static HtmlDomBuilder tr() {

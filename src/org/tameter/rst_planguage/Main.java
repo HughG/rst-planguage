@@ -23,12 +23,26 @@ import java.util.Map;
 import static org.tameter.rst_planguage.HtmlDomBuilder.*;
 
 public class Main {
+    private static XPathUtil xPathUtil;
 
     public static void main(String[] args) {
         try {
             File rawHtml = new File(args[0]);
             File outHtml = new File(args[1]);
             Document doc = load(rawHtml);
+
+            XPathFactory xPathFactory = XPathFactory.newInstance();
+            XPath xPath = xPathFactory.newXPath();
+            xPath.setNamespaceContext(new DocumentNamespaceContext(doc));
+            xPathUtil = new XPathUtil(xPath);
+
+            Element headElement = (Element) xPathUtil.getNode(doc, "/html/head");
+            Element scriptElement = script().withAttribute("type", "text/javascript")
+                    .withAttribute("src", "table.js")
+                    .asElement(doc);
+            headElement.appendChild(scriptElement);
+
+
             addSummary(doc);
             save(outHtml, doc);
         } catch (Exception e) {
@@ -55,37 +69,31 @@ public class Main {
     }
 
     private static void addSummary(Document doc) throws XPathExpressionException {
-        XPathFactory xPathFactory = XPathFactory.newInstance();
-        XPath xPath = xPathFactory.newXPath();
-        xPath.setNamespaceContext(new DocumentNamespaceContext(doc));
-        XPathExpression summaryNodeExpr = xPath.compile("id('summary')");
-        Element summaryNode = (Element) summaryNodeExpr.evaluate(doc, XPathConstants.NODE);
+        Element summaryNode = (Element) xPathUtil.getNode(doc, "id('summary')");
         // Get the field names for the summary table, then remove that input field list, so we're effectively replacing
         // it with the table we're adding below.
-        List<String> summaryFields = getSummaryFields(xPath, summaryNode);
-        XPathExpression summaryFieldListNameNodeExpr = xPath.compile(
-                ".//*[contains(concat(' ', normalize-space(@class), ' '), ' field-list ')]"
-        );
-        Node summaryFieldListNode = (Node) summaryFieldListNameNodeExpr.evaluate(summaryNode, XPathConstants.NODE);
+        List<String> summaryFields = getSummaryFields(summaryNode);
+        Node summaryFieldListNode =
+                xPathUtil.getNode(summaryNode, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' field-list ')]");
         summaryFieldListNode.getParentNode().removeChild(summaryFieldListNode);
 
         // Now collect the contents of the corresponding nodes in the document.
-        XPathExpression frSectionNodeExpr = xPath.compile(
-                "//*[contains(concat(' ', normalize-space(@class), ' '), ' section ')][starts-with(@id, 'fr-')]"
-        );
-        NodeList frSectionNodes = (NodeList) frSectionNodeExpr.evaluate(doc, XPathConstants.NODESET);
+        NodeList frSectionNodes =
+                xPathUtil.getNodeList(doc, "//*[contains(concat(' ', normalize-space(@class), ' '), ' section ')][starts-with(@id, 'fr-')]");
 
-        Element table = table().withClass("summary").apply(t -> {
+        Element table = table().withClass("summary table-autofilter").apply(t -> {
             t.with(colgroup().with(
                     col().withAttribute("span", "1")
                             .withAttribute("class", "summary-col-tag")
             ));
-            t.with(tr().apply(row -> {
+            t.with(thead().with((tr().apply(row -> {
                 row.with(th().withText("Tag"));
                 for (String summaryField : summaryFields) {
-                    row.with(th().withText(summaryField));
+                    row.with(th()
+                            .withClass("table-filterable")
+                            .withText(summaryField));
                 }
-            }));
+            }))));
             int sectionCount = frSectionNodes.getLength();
             for (int sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
                 Element sectionNode = (Element) frSectionNodes.item(sectionIndex);
@@ -93,28 +101,26 @@ public class Main {
                 // Add a soft break after each '.' in the title, to allow wrapping in the summary table.
                 String sectionTag = sectionTitleNode.getTextContent().replaceAll("\\.", ".\u200b");
                 String sectionId = sectionNode.getAttribute("id");
-                Map<String, String> fields = getFields(xPath, sectionNode);
-                t.with(tr().apply(row -> {
+                Map<String, String> fields = getFields(sectionNode);
+                t.with(tbody().with((tr().apply(row -> {
                     row.with(td().with(a().withAttribute("href", sectionId).withText(sectionTag)));
                     for (String summaryField : summaryFields) {
                         row.with(td().withText(fields.get(summaryField)));
                     }
-                }));
+                }))));
             }
         }).asElement(doc);
 
         summaryNode.appendChild(table);
     }
 
-    private static List<String> getSummaryFields(XPath xPath, Element summaryNode) {
+    private static List<String> getSummaryFields(Element summaryNode) {
         // Collect the names of fields we care about from the Summary section, stripping off the trailing ':'.
-        XPathExpression summaryFieldNameNodeExpr;
         NodeList summaryFieldNameNodes;
         try {
-            summaryFieldNameNodeExpr = xPath.compile(
-                    ".//th[contains(concat(' ', normalize-space(@class), ' '), ' field-name ')]"
+            summaryFieldNameNodes = xPathUtil.getNodeList(
+                    summaryNode, ".//th[contains(concat(' ', normalize-space(@class), ' '), ' field-name ')]"
             );
-            summaryFieldNameNodes = (NodeList) summaryFieldNameNodeExpr.evaluate(summaryNode, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
         }
@@ -127,15 +133,13 @@ public class Main {
         return summaryFields;
     }
 
-    private static Map<String, String> getFields(XPath xPath, Element sectionNode) {
+    private static Map<String, String> getFields(Element sectionNode) {
         // Collect the field names and values we from the section, stripping off the trailing ':' from the field names.
-        XPathExpression sectionFieldNodesExpr;
         NodeList sectionFieldNodes;
         try {
-            sectionFieldNodesExpr = xPath.compile(
-                    ".//tr[contains(concat(' ', normalize-space(@class), ' '), ' field ')]"
+            sectionFieldNodes = xPathUtil.getNodeList(
+                    sectionNode, ".//tr[contains(concat(' ', normalize-space(@class), ' '), ' field ')]"
             );
-            sectionFieldNodes = (NodeList) sectionFieldNodesExpr.evaluate(sectionNode, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
         }
